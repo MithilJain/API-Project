@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAFE-RAG — Project Report</title>
+<style>
+  @page { size: A4; margin: 22mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.55;
+    font-size: 13.5px;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  .cover {
+    min-height: 240mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    page-break-after: always;
+  }
+  .cover .kicker { color: #2563eb; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; margin-bottom: 12px; }
+  .cover h1 { font-size: 40px; margin: 0 0 10px; color: #0f172a; }
+  .cover .subtitle { font-size: 17px; color: #475569; margin-bottom: 40px; }
+  .cover .meta { font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+  .cover .meta div { margin-bottom: 4px; }
+
+  h1 { font-size: 24px; color: #0f172a; border-bottom: 3px solid #2563eb; padding-bottom: 8px; margin-top: 0; }
+  h2 { font-size: 17px; color: #1e3a8a; margin-top: 28px; }
+  h3 { font-size: 14px; color: #1e293b; margin-top: 20px; }
+  section { page-break-inside: avoid; }
+  .section-block { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  code {
+    background: #f1f5f9; color: #b91c1c; padding: 1px 5px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 12px;
+  }
+  pre {
+    background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 8px;
+    overflow-x: auto; font-size: 11.5px; line-height: 1.5;
+    page-break-inside: avoid;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 12.5px; }
+  th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; color: #334155; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .file-path { font-family: Consolas, monospace; font-size: 12px; color: #0f172a; font-weight: 600; }
+  .callout {
+    border-left: 4px solid #2563eb; background: #eff6ff; padding: 10px 14px;
+    border-radius: 0 6px 6px 0; margin: 12px 0; font-size: 12.5px;
+  }
+  .callout.warn { border-color: #d97706; background: #fffbeb; }
+  .callout.tip { border-color: #16a34a; background: #f0fdf4; }
+  .diagram {
+    display: flex; align-items: stretch; gap: 10px; margin: 16px 0; flex-wrap: nowrap;
+  }
+  .diagram .box {
+    flex: 1; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px 12px;
+    background: #f8fafc; font-size: 11.5px;
+  }
+  .diagram .box.accent { border-color: #2563eb; background: #eff6ff; }
+  .diagram .box b { display: block; margin-bottom: 4px; color: #0f172a; font-size: 12.5px; }
+  .diagram .arrow { display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 20px; }
+  .badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px;
+    border-radius: 10px; background: #dbeafe; color: #1e40af; margin-left: 6px;
+  }
+  .toc { list-style: none; padding: 0; }
+  .toc li { margin-bottom: 6px; font-size: 13.5px; }
+  .toc .num { color: #2563eb; font-weight: 700; margin-right: 8px; }
+  .footer-note { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; }
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <div class="kicker">API Systems &middot; Project Report</div>
+  <h1>SAFE-RAG</h1>
+  <div class="subtitle">Hallucination Detection &amp; Fact Verification API for LLM Outputs</div>
+  <div class="meta">
+    <div><strong>Type:</strong> Full-stack REST API + web frontend</div>
+    <div><strong>Backend:</strong> Python / FastAPI &nbsp;&bull;&nbsp; <strong>Frontend:</strong> Next.js / React / TypeScript</div>
+    <div><strong>Classification engine:</strong> Gemini LLM (with deterministic rule-based fallback)</div>
+    <div><strong>Reference basis:</strong> LeNguyenAnhKhoa/Hallucination-Detection (SciHal2025, A.M.P system)</div>
+    <div><strong>Report date:</strong> September 2026</div>
+  </div>
+</div>
+
+<!-- ================= TOC ================= -->
+<section>
+<h1>Contents</h1>
+<ol class="toc">
+  <li><span class="num">1.</span>What This Project Does</li>
+  <li><span class="num">2.</span>System Architecture</li>
+  <li><span class="num">3.</span>How a Request Actually Flows Through the System</li>
+  <li><span class="num">4.</span>Backend — File by File</li>
+  <li><span class="num">5.</span>Frontend — File by File</li>
+  <li><span class="num">6.</span>The Swagger Docs Page (<code>/docs</code>) — What It Is and How to Use It Live</li>
+  <li><span class="num">7.</span>How to Run the Project</li>
+  <li><span class="num">8.</span>Suggested Presentation / Demo Script</li>
+  <li><span class="num">9.</span>Design Decisions &amp; Known Limitations</li>
+  <li><span class="num">10.</span>Relationship to the Reference Paper</li>
+  <li><span class="num">11.</span>Anticipated Questions &amp; Answers</li>
+</ol>
+</section>
+
+<!-- ================= 1 ================= -->
+<section>
+<h1>1. What This Project Does</h1>
+<p>
+SAFE-RAG takes two pieces of text — a <strong>source context</strong> (e.g. a document, a database
+record, retrieved passages) and an <strong>LLM-generated answer</strong> that claims to be based on
+that context — and checks whether the answer is actually supported by the context.
+</p>
+<p>
+It does this the way a fact-checker would: it splits the answer into individual factual claims
+(roughly one per sentence), and for each claim decides one of three verdicts:
+</p>
+<table>
+  <tr><th>Verdict</th><th>Meaning</th></tr>
+  <tr><td><strong>Supported</strong></td><td>The context confirms this claim.</td></tr>
+  <tr><td><strong>Contradicted</strong></td><td>The context directly disagrees with this claim (a hallucination).</td></tr>
+  <tr><td><strong>Abstain</strong></td><td>The context has no information to confirm or deny this claim (e.g. a forecast, an opinion).</td></tr>
+</table>
+<p>Each claim also gets:</p>
+<ul>
+  <li>A <strong>risk score</strong> (0&ndash;100): how likely the claim is a hallucination.</li>
+  <li>An <strong>error type</strong>: <code>numerical_mismatch</code>, <code>temporal_mismatch</code>, <code>entity_mismatch</code>, <code>formatting_mismatch</code>, <code>unverifiable</code>, or <code>none</code>.</li>
+  <li><strong>Evidence</strong>: a quote/paraphrase from the context justifying the score.</li>
+</ul>
+<p>
+The project has two halves: a real <strong>backend REST API</strong> that does this classification
+work, and a <strong>frontend dashboard</strong> (already scaffolded before this work began) that was
+previously wired to fake <code>setTimeout</code> mock data. All six frontend pages now call the real
+backend.
+</p>
+</section>
+
+<!-- ================= 2 ================= -->
+<section>
+<h1>2. System Architecture</h1>
+<div class="diagram">
+  <div class="box accent">
+    <b>Browser (Next.js frontend)</b>
+    localhost:3000<br>
+    Dashboard &middot; Studio &middot; Batch &middot; Analytics &middot; Settings &middot; API Keys
+  </div>
+  <div class="arrow">&#8646;</div>
+  <div class="box accent">
+    <b>FastAPI backend</b>
+    localhost:8000<br>
+    /v1/verify &middot; /v1/batch &middot; /v1/settings &middot; /v1/api-keys &middot; /v1/analytics
+  </div>
+  <div class="arrow">&#8646;</div>
+  <div class="box">
+    <b>Gemini API</b>
+    (or rule-based<br>fallback if no key)
+  </div>
+</div>
+<p>
+The two halves are <strong>separate processes</strong> talking over plain HTTP + JSON, secured with a
+Bearer API key and CORS-restricted to the frontend's origin. This mirrors how a real product would be
+built: a thin client and an independently deployable, independently testable API service.
+</p>
+<h3>Persistence</h3>
+<p>
+There is no database. Three JSON files under <span class="file-path">backend/data/</span> act as
+tiny collections:
+</p>
+<table>
+  <tr><th>File</th><th>Holds</th></tr>
+  <tr><td><code>api_keys.json</code></td><td>Issued API keys (id, secret, label, revoked flag, last-used time)</td></tr>
+  <tr><td><code>settings.json</code></td><td>The current risk-threshold configuration (lower/upper bound)</td></tr>
+  <tr><td><code>history.json</code></td><td>An append-only log of every verification run — this is what powers Analytics/Dashboard with <em>real</em> numbers</td></tr>
+</table>
+<p>This is a deliberate simplification for a course project: fully inspectable, zero setup, easy to explain — not meant to be how a production system would store this data (see Section 9).</p>
+</section>
+
+<!-- ================= 3 ================= -->
+<section>
+<h1>3. How a Request Actually Flows Through the System</h1>
+<p>Walking through one concrete example end to end — this is the best thing to narrate live in the demo.</p>
+<h3>Input</h3>
+<pre><code>context: "Q3 revenue was $45M, reported on March 3, 2024 by CEO Jane Smith."
+answer:  "The company revenue grew to $50M in Q3. The new product launched
+          in 2025. CEO John Doe announced record margins next year."</code></pre>
+
+<h3>Step-by-step</h3>
+<ol>
+  <li><strong>Claim decomposition</strong> (<span class="file-path">backend/app/services/claims.py</span>) splits
+    the answer on sentence boundaries into 3 claims.</li>
+  <li><strong>Per-claim classification</strong> (<span class="file-path">backend/app/services/verifier.py</span>)
+    sends each claim + the context to Gemini (<span class="file-path">gemini_client.py</span>) asking for a
+    strict JSON verdict: <code>{risk_score, error_type, evidence}</code>. If Gemini is unavailable or errors,
+    the deterministic rule-based scorer (<span class="file-path">rules.py</span>) takes over automatically.</li>
+  <li><strong>Threshold lookup</strong>: the current <code>lower_bound</code>/<code>upper_bound</code> settings
+    are read from <code>settings.json</code>. A risk score below the lower bound &rarr; <em>Supported</em>;
+    above the upper bound &rarr; <em>Contradicted</em>; in between &rarr; <em>Abstain</em>.</li>
+  <li><strong>Result assembly</strong>: claims are packaged into the API response and appended to
+    <code>history.json</code> for analytics.</li>
+</ol>
+
+<h3>Actual output (captured from a real run of this backend)</h3>
+<pre><code>{
+  "claims": [
+    {
+      "text": "The company revenue grew to $50M in Q3.",
+      "verdict": "Contradicted",
+      "risk_score": 88.0,
+      "error_type": "numerical_mismatch",
+      "evidence": "Context contains different figures: 3, 45."
+    },
+    {
+      "text": "The new product launched in 2025.",
+      "verdict": "Contradicted",
+      "risk_score": 82.0,
+      "error_type": "temporal_mismatch",
+      "evidence": "Context references different dates: 2024."
+    },
+    {
+      "text": "CEO John Doe announced record margins next year.",
+      "verdict": "Abstain",
+      "risk_score": 55.0,
+      "error_type": "unverifiable",
+      "evidence": null
+    }
+  ],
+  "hallucination_rate": 100.0,
+  "engine": "rule_based_fallback"
+}</code></pre>
+<div class="callout tip">
+  <strong>Good demo moment:</strong> point out that the numeric mismatch ($50M vs $45M) and the date
+  mismatch (2025 vs 2024) were correctly separated into different <code>error_type</code> categories,
+  and the unverifiable forecast about "next year" correctly abstained instead of being falsely marked
+  right or wrong.
+</div>
+</section>
+
+<!-- ================= 4 ================= -->
+<section>
+<h1>4. Backend &mdash; File by File</h1>
+<p>All under <span class="file-path">backend/app/</span>.</p>
+
+<h2>Entry point</h2>
+<table>
+  <tr><th>File</th><th>Role</th></tr>
+  <tr><td><code>main.py</code></td><td>Creates the FastAPI app, adds CORS middleware, registers all routers, runs <code>ensure_default_key()</code> on startup so a working API key always exists.</td></tr>
+  <tr><td><code>config.py</code></td><td>Loads <code>.env</code>: Gemini key/model, allowed CORS origins, whether auth is required, history size limit.</td></tr>
+  <tr><td><code>schemas.py</code></td><td>Every Pydantic request/response model (<code>VerifyRequest</code>, <code>Claim</code>, <code>BatchResponse</code>, <code>ThresholdSettings</code>, <code>ApiKeyPublic</code>, analytics models, etc.) &mdash; this is the API's data contract.</td></tr>
+  <tr><td><code>store.py</code></td><td>Tiny generic JSON-file read/write helper with a thread lock, used by every service below.</td></tr>
+  <tr><td><code>security.py</code></td><td>API key lifecycle: create, list, roll (rotate secret), revoke, and the <code>require_api_key</code> dependency that every protected route depends on.</td></tr>
+</table>
+
+<h2>Services (<code>app/services/</code>) &mdash; the actual verification logic</h2>
+<table>
+  <tr><th>File</th><th>Role</th></tr>
+  <tr><td><code>claims.py</code></td><td>Splits an answer string into individual claim sentences.</td></tr>
+  <tr><td><code>gemini_client.py</code></td><td>Builds the classification prompt and calls the Gemini API, asking for strict JSON. Returns <code>None</code> on any failure so the caller can fall back.</td></tr>
+  <tr><td><code>rules.py</code></td><td>Deterministic backup classifier: compares numbers, 4-digit years, and capitalized entities between claim and context using regex. No LLM call, no network &mdash; always available.</td></tr>
+  <tr><td><code>verifier.py</code></td><td>Orchestrator: decomposes the answer, tries Gemini per claim, falls back to rules, converts each risk score into a verdict using the current thresholds. This is the file that ties everything together.</td></tr>
+  <tr><td><code>settings_service.py</code></td><td>Get/save the threshold configuration.</td></tr>
+  <tr><td><code>history.py</code></td><td>Appends every verification run to the history log and reads it back for analytics.</td></tr>
+</table>
+
+<h2>Routers (<code>app/routers/</code>) &mdash; the HTTP surface</h2>
+<table>
+  <tr><th>File</th><th>Endpoints</th></tr>
+  <tr><td><code>verify.py</code></td><td><code>POST /v1/verify</code> &mdash; single context/answer pair</td></tr>
+  <tr><td><code>batch.py</code></td><td><code>POST /v1/batch</code> &mdash; a list of pairs, returns per-row + aggregate summary</td></tr>
+  <tr><td><code>settings_router.py</code></td><td><code>GET</code>/<code>PUT /v1/settings</code></td></tr>
+  <tr><td><code>api_keys.py</code></td><td><code>GET/POST /v1/api-keys</code>, <code>/roll</code>, <code>/revoke</code>, <code>/bootstrap</code></td></tr>
+  <tr><td><code>analytics.py</code></td><td><code>GET /v1/analytics/summary</code>, <code>/timeseries</code>, <code>/models</code> &mdash; all computed live from <code>history.json</code></td></tr>
+</table>
+</section>
+
+<!-- ================= 5 ================= -->
+<section>
+<h1>5. Frontend &mdash; File by File</h1>
+<p>Next.js App Router, all pages are client components (<code>"use client"</code>) since they need browser <code>fetch</code>/state.</p>
+
+<h2>Shared code</h2>
+<table>
+  <tr><th>File</th><th>Role</th></tr>
+  <tr><td><code>lib/api.ts</code></td><td>The one place that talks to the backend. Wraps <code>axios</code>, attaches the API key to every request, auto-provisions a key on first load (<code>ensureApiKey</code>), and <strong>self-heals</strong>: if a request 401s, it silently mints a fresh key and retries once. Exports typed functions for every endpoint (<code>verify</code>, <code>batchVerify</code>, <code>getSettings</code>, <code>listApiKeys</code>, <code>getAnalyticsSummary</code>, etc.).</td></tr>
+  <tr><td><code>lib/csv.ts</code></td><td>A small hand-written CSV parser (handles quoted fields) plus a CSV serializer, used by the Batch page to read uploads and export results.</td></tr>
+  <tr><td><code>components/Sidebar.tsx</code></td><td>Left navigation, unchanged from the original scaffold.</td></tr>
+</table>
+
+<h2>Pages (<code>app/</code>)</h2>
+<table>
+  <tr><th>Route</th><th>File</th><th>What it does now (vs. before)</th></tr>
+  <tr><td><code>/</code></td><td><code>app/page.tsx</code></td><td>Dashboard. Fetches <code>/v1/analytics/summary</code> on load: real claim counts, real hallucination rate, a real error-type pie chart, and a real recent-activity feed. Was: hardcoded numbers.</td></tr>
+  <tr><td><code>/studio</code></td><td><code>app/studio/page.tsx</code></td><td>Verification Studio. Textareas for context/answer + a model-name field, calls <code>verify()</code>, renders the real claims with verdict color, risk gauge, evidence, and error type. Was: a 2-second fake timer returning 3 hardcoded claims.</td></tr>
+  <tr><td><code>/batch</code></td><td><code>app/batch/page.tsx</code></td><td>Drag-and-drop CSV/JSON upload, parsed client-side, sent to <code>/v1/batch</code>, renders a real results table and exports a real CSV report. Was: a fake progress bar with 2 hardcoded rows.</td></tr>
+  <tr><td><code>/analytics</code></td><td><code>app/analytics/page.tsx</code></td><td>Fetches time series, error breakdown, and per-model stats &mdash; all from real logged runs. Was: 3 hardcoded chart datasets.</td></tr>
+  <tr><td><code>/settings</code></td><td><code>app/settings/page.tsx</code></td><td>Loads/saves the real risk thresholds via <code>GET</code>/<code>PUT /v1/settings</code> &mdash; moving the sliders changes live classification behavior. Was: local-only React state, never sent anywhere.</td></tr>
+  <tr><td><code>/api-keys</code></td><td><code>app/api-keys/page.tsx</code></td><td>Real key list/create/roll/revoke against the backend, plus a live curl example pointed at the actual API base URL. Was: one hardcoded fake key string.</td></tr>
+</table>
+</section>
+
+<!-- ================= 6 ================= -->
+<section>
+<h1>6. The Swagger Docs Page (<code>/docs</code>)</h1>
+<p>
+FastAPI auto-generates this page from the Pydantic schemas and route definitions in the code &mdash;
+nothing was hand-written for it. Open <strong>http://127.0.0.1:8000/docs</strong> while the backend is
+running.
+</p>
+<h3>What's on it</h3>
+<ul>
+  <li>Every endpoint, grouped by tag (<code>verify</code>, <code>batch</code>, <code>settings</code>, <code>api-keys</code>, <code>analytics</code>).</li>
+  <li>The exact request body schema and response schema for each &mdash; generated straight from <code>schemas.py</code>, so it can never drift out of sync with the real API.</li>
+  <li>A "Try it out" button on every endpoint that sends a real request to your running backend and shows the real response, right in the browser &mdash; no Postman or curl needed.</li>
+</ul>
+<h3>What to do with it during the presentation</h3>
+<ol>
+  <li>Expand <code>POST /v1/verify</code>, click <strong>Try it out</strong>.</li>
+  <li>Paste a context/answer pair into the example body and click <strong>Execute</strong>.</li>
+  <li>Scroll down and show the real JSON response with verdicts, risk scores, and error types.</li>
+</ol>
+<div class="callout">
+  <strong>Why this matters for an API course:</strong> it proves the system is a genuine, independently
+  usable REST API &mdash; not logic baked into the frontend. Anyone (a mobile app, another service, a
+  grading script) could call this API directly, with no browser UI involved at all.
+</div>
+<div class="callout warn">
+  <strong>One thing to know:</strong> <code>/v1/verify</code> requires an <code>Authorization: Bearer &lt;key&gt;</code>
+  header. Grab a working key first from <code>POST /v1/api-keys/bootstrap</code> (no auth needed) or from
+  the Developer API page in the frontend, then paste it into the padlock/Authorize button at the top of
+  the Swagger page before calling protected endpoints.
+</div>
+</section>
+
+<!-- ================= 7 ================= -->
+<section>
+<h1>7. How to Run the Project</h1>
+<h3>Terminal 1 &mdash; backend</h3>
+<pre><code>cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --reload --port 8000</code></pre>
+<p>Ready when you see <code>Application startup complete.</code> &nbsp;Verify: <a href="http://127.0.0.1:8000/v1/health">http://127.0.0.1:8000/v1/health</a> should return <code>{"status":"ok"}</code>.</p>
+
+<h3>Terminal 2 &mdash; frontend</h3>
+<pre><code>npm run dev</code></pre>
+<p>Open <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+
+<div class="callout tip">
+  Works with <strong>zero configuration</strong> &mdash; no Gemini key needed. Without one, every claim is
+  scored by the rule-based fallback automatically. To use real Gemini classification, get a free key at
+  <code>aistudio.google.com/apikey</code> and paste it into <code>backend/.env</code> as <code>GEMINI_API_KEY</code>,
+  then restart the backend terminal.
+</div>
+</section>
+
+<!-- ================= 8 ================= -->
+<section>
+<h1>8. Suggested Presentation / Demo Script</h1>
+<ol>
+  <li><strong>Open with the problem:</strong> LLMs hallucinate; RAG systems need a verification layer that checks generated answers against retrieved context before showing them to a user.</li>
+  <li><strong>Show the Dashboard</strong> (empty state is fine) &mdash; explain it will fill in live as you run verifications.</li>
+  <li><strong>Verification Studio:</strong> paste the example from Section 3, click Run, narrate the three verdicts and why each error type was assigned.</li>
+  <li><strong>Settings:</strong> drag the risk threshold sliders, re-run the same claim, show the verdict actually changes &mdash; proves the thresholds are live, not decorative.</li>
+  <li><strong>Batch Processing:</strong> upload <code>public/sample-batch.csv</code>, show the results table and CSV export.</li>
+  <li><strong>Analytics &amp; Dashboard:</strong> refresh &mdash; now populated with the real runs you just did.</li>
+  <li><strong>Developer API page &amp; <code>/docs</code>:</strong> show the API key, then hit <code>/v1/verify</code> directly from Swagger &mdash; proves this is a real, independently callable API, not UI-only logic.</li>
+  <li><strong>Close</strong> with the architecture diagram (Section 2) and the design decisions (Section 9) to show you understand the trade-offs you made.</li>
+</ol>
+</section>
+
+<!-- ================= 9 ================= -->
+<section>
+<h1>9. Design Decisions &amp; Known Limitations</h1>
+<table>
+  <tr><th>Decision</th><th>Why</th><th>What a production system would do instead</th></tr>
+  <tr><td>Sentence-level claim splitting (regex)</td><td>Simple, fast, good enough for short LLM answers</td><td>LLM-based atomic sub-claim decomposition</td></tr>
+  <tr><td>JSON files instead of a database</td><td>Zero setup, fully inspectable for a demo</td><td>Postgres/SQLite with proper concurrency</td></tr>
+  <tr><td>Rule-based fallback (regex number/date/entity overlap)</td><td>Keeps the demo working with no API key, no internet, or a rate-limited key</td><td>A real trained NLI/entailment model as the fallback, not just the safety net</td></tr>
+  <tr><td>Plaintext API keys in a JSON file</td><td>Easy to reason about and demo</td><td>Hashed keys, a real auth/session system for the key-management endpoints</td></tr>
+  <tr><td>One Gemini call per claim</td><td>Simple, clear per-claim evidence</td><td>Batched/parallel calls for large-scale batch jobs</td></tr>
+</table>
+</section>
+
+<!-- ================= 10 ================= -->
+<section>
+<h1>10. Relationship to the Reference Paper</h1>
+<p>
+The reference repository (<code>LeNguyenAnhKhoa/Hallucination-Detection</code>) is the code for
+<strong>"A.M.P at SciHal2025: Automated Hallucination Detection in Scientific Content via LLMs and
+Prompt Engineering"</strong> (ACL 2025 SDP Workshop) &mdash; 4th place in Subtask 1 and 2nd place in
+Subtask 2 of the SciHal2025 shared task.
+</p>
+<p>It is <strong>not</strong> a REST API &mdash; it's a set of research scripts that call the Gemini/OpenAI
+APIs with few-shot prompts to classify a claim vs. a reference as <strong>Entailment</strong>,
+<strong>Contradiction</strong>, or <strong>Unverifiable</strong>.</p>
+<table>
+  <tr><th>Reference paper concept</th><th>This project's equivalent</th></tr>
+  <tr><td>Entailment</td><td>Supported</td></tr>
+  <tr><td>Contradiction</td><td>Contradicted</td></tr>
+  <tr><td>Unverifiable</td><td>Abstain</td></tr>
+  <tr><td>Few-shot prompt asking for a label</td><td><code>gemini_client.py</code>'s structured JSON prompt asking for a risk score + error type</td></tr>
+</table>
+<p>
+What this project adds on top of that idea: a full serving layer (FastAPI + routing + auth), a
+threshold-based verdict system instead of the LLM deciding the label directly, a rule-based fallback
+for resilience, persistence, and a connected frontend &mdash; none of which exist in the reference repo.
+</p>
+</section>
+
+<!-- ================= 11 ================= -->
+<section>
+<h1>11. Anticipated Questions &amp; Answers</h1>
+<h3>Q: Why does the LLM output a risk score instead of the verdict directly?</h3>
+<p>A: So the Supported/Contradicted/Abstain cutoffs are configurable at runtime (via Settings) without needing to change the prompt or re-call the model &mdash; the same score can be re-classified under different thresholds instantly.</p>
+
+<h3>Q: What happens with no internet / no API key?</h3>
+<p>A: <code>gemini_client.py</code> returns <code>None</code> on any failure, and <code>verifier.py</code>
+falls back to <code>rules.py</code> automatically per-claim &mdash; the API never errors out because of
+the LLM being unavailable.</p>
+
+<h3>Q: How is this secured?</h3>
+<p>A: Bearer API-key auth on every verification/analytics/settings endpoint, CORS restricted to the
+frontend's origin only, keys can be rotated or revoked. Key-management endpoints themselves are
+intentionally open (like a dashboard using session auth) &mdash; documented as a simplification in
+Section 9.</p>
+
+<h3>Q: Does it scale?</h3>
+<p>A: Not as-is &mdash; JSON-file storage assumes a single process. The architecture (stateless FastAPI
+routes, a swappable classification service) would scale by swapping the JSON store for a real database;
+the API contract wouldn't need to change.</p>
+
+<h3>Q: How accurate is the rule-based fallback vs. the LLM?</h3>
+<p>A: The fallback is intentionally crude (regex overlap) &mdash; a safety net for demo resilience, not a
+competitor to the LLM path. The <code>engine</code> field in every response reports which one was
+actually used, so this is fully transparent.</p>
+
+<div class="footer-note">
+  SAFE-RAG &mdash; Hallucination Detection &amp; Fact Verification API &middot; Project report generated for course presentation.
+</div>
+</section>
+
+</body>
+</html>

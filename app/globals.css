@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Enables class-based dark mode: toggling `.dark` on <html> (via ThemeProvider)
+   switches every `dark:` utility, instead of Tailwind v4's default of only
+   following the OS `prefers-color-scheme`. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
